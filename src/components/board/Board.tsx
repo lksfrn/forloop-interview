@@ -1,90 +1,163 @@
 import React from "react";
 import { useDrop } from "react-dnd";
-import { useList, useMap } from "react-use";
-import { BoardItem } from "./BoardItem";
-import { DraggableTypes, DragItem, Item } from "./types";
+import { Layer, Stage, Text, Group, Rect, Arrow, Line } from "react-konva";
+import { useInterval, useList, useWindowSize } from "react-use";
+import { ConnectItem, DraggableTypes, DragItem, Item } from "./types";
 
 export const Board: React.FC = () => {
   const [list, listActions] = useList<Item>();
-  const [] = useMap()
-  const [coords, setCoords] = React.useState({ x: 0, y: 0 });
-  const [coordsOffset, setCoordsOffset] = React.useState({ x: 0, y: 0 });
-//   const [isMouseDown, setIsMouseDown] = React.useState(false);
-
-//   const onMouseDown: React.MouseEventHandler<HTMLDivElement> = ({
-//     clientX,
-//     clientY,
-//   }) => {
-//     setCoords({
-//       x: clientX,
-//       y: clientY,
-//     });
-//     setIsMouseDown(true);
-//   };
-
-//   const onMouseUp: React.MouseEventHandler<HTMLDivElement> = ({
-//     clientX,
-//     clientY,
-//   }) => {
-//     setCoordsOffset({
-//       x: coordsOffset.x + coords.x - clientX,
-//       y: coordsOffset.y + coords.y - clientY,
-//     });
-//     setIsMouseDown(false);
-//   };
-
-//   const onMouseMove: React.MouseEventHandler<HTMLDivElement> = ({
-//     clientX,
-//     clientY,
-//   }) => {
-//     if (isMouseDown) {
-//         setCoordsOffset({
-//           x: coords.x - clientX,
-//           y: coords.y - clientY,
-//         });
-//     }
-//   };
+  const [connectList, connectListActions] = useList<ConnectItem>();
+  const { width, height } = useWindowSize();
+  const menuRef = React.useRef<HTMLDivElement>(null);
 
   const [, drop] = useDrop<DragItem>(
     () => ({
       accept: DraggableTypes.CARD,
       drop: (dragItem, monitor) => {
         const xy = monitor.getSourceClientOffset();
-
-        if (!Number.isNaN(dragItem.index)) {
-          listActions.updateAt(dragItem.index, {
-            x: xy?.x || 0,
-            y: xy?.y || 0,
-            ...dragItem,
-          });
-        } else {
-          listActions.push({
-            x: xy?.x || 0,
-            y: xy?.y || 0,
-            ...dragItem,
-            index: list.length,
-          });
-        }
+        const x = (xy?.x || 0) - 180;
+        const y = xy?.y || 0;
+        listActions.push({
+          x,
+          y,
+          ...dragItem,
+        });
       },
     }),
     [list.length]
   );
 
+  useInterval(() => {
+    listActions.push({
+      x: 100,
+      y: 100,
+      text: "Auto",
+      index: 0,
+    });
+  }, 20 * 1000);
+
+  const [node, setNode] = React.useState<any>(null);
+  const [nodeContext, setNodeContext] = React.useState<any>(null);
+
+  window.addEventListener("click", () => {
+    if (!menuRef.current) {
+      setNodeContext(null);
+      return;
+    }
+
+    menuRef.current.style.display = "none";
+  });
+
   return (
-    <>
-      <section
-        ref={drop}
-        css={{}}
-        // onMouseDown={onMouseDown}
-        // onMouseUp={onMouseUp}
-        // onMouseMove={onMouseMove}
-        // onDoubleClick={() => setCoordsOffset({ x: 0, y: 0 })}
+    <div ref={drop}>
+      <div
+        ref={menuRef}
+        style={{
+          display: "none",
+        }}
+        css={{
+          position: "fixed",
+          zIndex: 20,
+          border: "1px solid black",
+          backgroundColor: "white",
+          width: "10rem",
+          padding: "0.5rem",
+          "&:hover": {
+            backgroundColor: "lightcoral",
+          },
+        }}
+        onClick={() => {
+          if (!nodeContext) {
+            return;
+          }
+
+          listActions.removeAt(node[0]);
+          setNodeContext(null);
+        }}
       >
-        <pre>{JSON.stringify(list, null, 2)}</pre>
-        {list.map((item, i) => (
-          <BoardItem item={item} key={i} offset={coordsOffset} />
-        ))}
-      </section>
-    </>
+        Delete
+      </div>
+
+      <Stage width={width - 180} height={height}>
+        <Layer>
+          {list.map((item, i) => (
+            <Group
+              key={i}
+              draggable
+              x={item.x}
+              y={item.y}
+              onDragStart={() => {}}
+              onDragEnd={(e) => {
+                listActions.updateAt(i, {
+                  ...list[i],
+                  x: e.target.x(),
+                  y: e.target.y(),
+                });
+              }}
+              onClick={(e) => {
+                if (node && node?.[0] !== i) {
+                  connectListActions.push({
+                    from: node?.[0],
+                    to: i,
+                  });
+
+                  setNode(null);
+                } else {
+                  setNode(node?.[0] !== i ? [i, e.target] : null);
+                }
+              }}
+              onContextMenu={(e) => {
+                e.evt.preventDefault();
+
+                if (!menuRef.current) {
+                  return;
+                }
+
+                setNodeContext([i, e.target]);
+                menuRef.current.style.display = "block";
+                menuRef.current.style.top = 56 - 1 + item.y + "px";
+                menuRef.current.style.left = 180 - 1 + item.x + "px";
+              }}
+            >
+              <Rect
+                width={160 - 2}
+                height={56 - 2}
+                fill={node?.[0] !== i ? "green" : "red"}
+                strokeEnabled
+                stroke="black"
+                strokeWidth={2}
+              />
+              <Text
+                text={item.text}
+                fill="black"
+                fontFamily="sans-serif"
+                fontSize={16}
+                lineHeight={1}
+                x={18}
+                y={23}
+              />
+            </Group>
+          ))}
+
+          {connectList.map((connect, i) => {
+            const points: number[] = [
+              list[connect.from].x + 80,
+              list[connect.from].y + 28,
+              list[connect.to].x + 80,
+              list[connect.to].y + 28,
+            ];
+
+            return (
+              <Arrow
+                key={i}
+                points={points}
+                fill="black"
+                stroke="black"
+              />
+            );
+          })}
+        </Layer>
+      </Stage>
+    </div>
   );
 };

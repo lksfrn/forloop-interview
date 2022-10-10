@@ -7,6 +7,4 @@
 - based on superfast Vite
 - deployed to Vercel with CI/CD
 - Emotion used for styling
-- memoization kills first node that is added
-- data on the board left intentionally
 - some issues with the positioning of nodes

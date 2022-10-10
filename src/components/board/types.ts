@@ -1,8 +1,10 @@
 export enum DraggableTypes {
   CARD = "card",
-  CONNECT = 'connect'
+  CONNECT = "connect",
 }
 
 export type Item = { x: number; y: number; text: string; index: number };
 
-export type DragItem = Pick<Item, 'index' | 'text'>
+export type DragItem = Pick<Item, "index" | "text">;
+
+export type ConnectItem = { from: any; to: any };

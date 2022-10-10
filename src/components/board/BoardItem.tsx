@@ -59,13 +59,13 @@ export const BoardItem: React.FC<{
       ref={dragRef}
       css={{
         backgroundColor: "white",
-        border: "1px solid black",
+        border: "2px solid black",
         top: item.y - offset.y,
         left: item.x - offset.x,
         position: "fixed",
         width: "10rem",
         height: "56px",
-        textAlign: "center",
+        lineHeight: 1,
         zIndex: 5,
         cursor: "grab",
         opacity,
@@ -100,11 +100,11 @@ export const BoardItem: React.FC<{
         },
       }}
     >
-      <div css={{ padding: "1rem 1rem", position: "relative" }}>
+      <div css={{ padding: "20px 1rem", position: "relative" }}>
+        {/* <Connect />
         <Connect />
         <Connect />
-        <Connect />
-        <Connect />
+        <Connect /> */}
         {item.text ?? "Unknown"}
       </div>
     </div>
