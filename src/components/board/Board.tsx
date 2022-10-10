@@ -54,8 +54,15 @@ export const Board: React.FC = () => {
       return;
     }
 
-    connectListActions.filter(
-      (connect) => connect.from !== node[0] && connect.to !== node[0]
+    connectListActions.set(
+      connectList
+        .filter((connect) => connect.from !== node[0] && connect.to !== node[0])
+        .map((connect, i) => {
+          return {
+            from: connect.from >= i ? connect.from - 1 : connect.from,
+            to: connect.to >= i ? connect.to - 1 : connect.to,
+          };
+        })
     );
 
     listActions.removeAt(node[0]);
@@ -154,16 +161,19 @@ export const Board: React.FC = () => {
           ))}
 
           {connectList.map((connect, i) => {
-            const points: number[] = [
-              list[connect.from].x + 80,
-              list[connect.from].y + 28,
-              list[connect.to].x + 80,
-              list[connect.to].y + 28,
-            ];
-
-            return (
-              <Arrow key={i} points={points} fill="black" stroke="black" />
-            );
+            try {
+              const points: number[] = [
+                list[connect.from].x + 80,
+                list[connect.from].y + 28,
+                list[connect.to].x + 80,
+                list[connect.to].y + 28,
+              ];
+              return (
+                <Arrow key={i} points={points} fill="black" stroke="black" />
+              );
+            } catch {
+              return null;
+            }
           })}
         </Layer>
       </Stage>
