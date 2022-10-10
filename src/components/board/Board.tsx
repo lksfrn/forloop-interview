@@ -1,6 +1,7 @@
+import { KonvaEventObject } from "konva/lib/Node";
 import React from "react";
 import { useDrop } from "react-dnd";
-import { Layer, Stage, Text, Group, Rect, Arrow, Line } from "react-konva";
+import { Layer, Stage, Text, Group, Rect, Arrow } from "react-konva";
 import { useInterval, useList, useWindowSize } from "react-use";
 import { ConnectItem, DraggableTypes, DragItem, Item } from "./types";
 
@@ -48,6 +49,55 @@ export const Board: React.FC = () => {
     menuRef.current.style.display = "none";
   });
 
+  const removeNodeContext = () => {
+    if (!nodeContext) {
+      return;
+    }
+
+    connectListActions.filter(
+      (connect) => connect.from !== node[0] && connect.to !== node[0]
+    );
+
+    listActions.removeAt(node[0]);
+    setNodeContext(null);
+    setNode(null);
+  };
+
+  const dragBlockEnd = (i: number) => (e: KonvaEventObject<DragEvent>) => {
+    listActions.updateAt(i, {
+      ...list[i],
+      x: e.target.x(),
+      y: e.target.y(),
+    });
+  };
+
+  const blockClick = (i: number) => (e: KonvaEventObject<DragEvent>) => {
+    if (node && node?.[0] !== i) {
+      connectListActions.push({
+        from: node?.[0],
+        to: i,
+      });
+
+      setNode(null);
+    } else {
+      setNode(node?.[0] !== i ? [i, e.target] : null);
+    }
+  };
+
+  const contextBlock =
+    (i: number, item: Item) => (e: KonvaEventObject<PointerEvent>) => {
+      e.evt.preventDefault();
+
+      if (!menuRef.current) {
+        return;
+      }
+
+      setNodeContext([i, e.target]);
+      menuRef.current.style.display = "block";
+      menuRef.current.style.top = 56 - 1 + item.y + "px";
+      menuRef.current.style.left = 180 - 1 + item.x + "px";
+    };
+
   return (
     <div ref={drop}>
       <div
@@ -66,14 +116,7 @@ export const Board: React.FC = () => {
             backgroundColor: "lightcoral",
           },
         }}
-        onClick={() => {
-          if (!nodeContext) {
-            return;
-          }
-
-          listActions.removeAt(node[0]);
-          setNodeContext(null);
-        }}
+        onClick={removeNodeContext}
       >
         Delete
       </div>
@@ -86,38 +129,9 @@ export const Board: React.FC = () => {
               draggable
               x={item.x}
               y={item.y}
-              onDragStart={() => {}}
-              onDragEnd={(e) => {
-                listActions.updateAt(i, {
-                  ...list[i],
-                  x: e.target.x(),
-                  y: e.target.y(),
-                });
-              }}
-              onClick={(e) => {
-                if (node && node?.[0] !== i) {
-                  connectListActions.push({
-                    from: node?.[0],
-                    to: i,
-                  });
-
-                  setNode(null);
-                } else {
-                  setNode(node?.[0] !== i ? [i, e.target] : null);
-                }
-              }}
-              onContextMenu={(e) => {
-                e.evt.preventDefault();
-
-                if (!menuRef.current) {
-                  return;
-                }
-
-                setNodeContext([i, e.target]);
-                menuRef.current.style.display = "block";
-                menuRef.current.style.top = 56 - 1 + item.y + "px";
-                menuRef.current.style.left = 180 - 1 + item.x + "px";
-              }}
+              onDragEnd={dragBlockEnd(i)}
+              onClick={blockClick(i)}
+              onContextMenu={contextBlock(i, item)}
             >
               <Rect
                 width={160 - 2}
@@ -148,12 +162,7 @@ export const Board: React.FC = () => {
             ];
 
             return (
-              <Arrow
-                key={i}
-                points={points}
-                fill="black"
-                stroke="black"
-              />
+              <Arrow key={i} points={points} fill="black" stroke="black" />
             );
           })}
         </Layer>
