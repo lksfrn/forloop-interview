@@ -2,39 +2,13 @@ import React from "react";
 import { useDrag, useDrop } from "react-dnd";
 import { DraggableTypes, DragItem, Item } from "./types";
 
-const Connect: React.FC = () => {
-  const [{ opacity }, dragRef] = useDrag<
-    DragItem,
-    unknown,
-    { opacity: number }
-  >(
-    () => ({
-      type: DraggableTypes.CONNECT,
-      //   item: { text: item.text, index: item.index },
-      collect: (monitor) => ({
-        opacity: monitor.isDragging() ? 0.5 : 1,
-      }),
-    }),
-    []
-  );
-
-  const [, drop] = useDrop<DragItem>(
-    () => ({
-      accept: DraggableTypes.CONNECT,
-      drop: (_, monitor) => {
-        console.log("dropped");
-      },
-    }),
-    []
-  );
-
-  return (
-    <div ref={dragRef}>
-      <span ref={drop}>&times;</span>
-    </div>
-  );
-};
-
+/**
+ * Legacy component for menu block
+ * 
+ * TODO: fix positioning
+ * 
+ * @deprecated should rewrite to version based on canvas
+ */
 export const BoardItem: React.FC<{
   item: Item;
   offset: { x: number; y: number };
@@ -101,10 +75,6 @@ export const BoardItem: React.FC<{
       }}
     >
       <div css={{ padding: "20px 1rem", position: "relative" }}>
-        {/* <Connect />
-        <Connect />
-        <Connect />
-        <Connect /> */}
         {item.text ?? "Unknown"}
       </div>
     </div>

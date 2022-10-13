@@ -5,6 +5,16 @@ import { Layer, Stage, Text, Group, Rect, Arrow } from "react-konva";
 import { useInterval, useList, useWindowSize } from "react-use";
 import { ConnectItem, DraggableTypes, DragItem, Item } from "./types";
 
+/**
+ * Components for rendering canvas board
+ * 
+ * TODO:
+ *  - extract into subcomponents
+ *  - do not use React rendering for blocks (!!!)
+ *    - this is the main performance issue
+ *  - write custom rendering logic
+ *  - cache what can be cached (using React.memo)
+ */
 export const Board: React.FC = () => {
   const [list, listActions] = useList<Item>();
   const [connectList, connectListActions] = useList<ConnectItem>();
@@ -28,6 +38,9 @@ export const Board: React.FC = () => {
     [list.length]
   );
 
+  /**
+   * Generate new node every 20 seconds
+   */
   useInterval(() => {
     listActions.push({
       x: 100,
@@ -40,6 +53,9 @@ export const Board: React.FC = () => {
   const [node, setNode] = React.useState<any>(null);
   const [nodeContext, setNodeContext] = React.useState<any>(null);
 
+  /**
+   * Close context menu when user clicks somewhere
+   */
   window.addEventListener("click", () => {
     if (!menuRef.current) {
       setNodeContext(null);
@@ -49,6 +65,9 @@ export const Board: React.FC = () => {
     menuRef.current.style.display = "none";
   });
 
+  /**
+   * Remove node from board
+   */
   const removeNodeContext = () => {
     if (!nodeContext) {
       return;
@@ -70,6 +89,9 @@ export const Board: React.FC = () => {
     setNode(null);
   };
 
+  /**
+   * Handle block drop
+   */
   const dragBlockEnd = (i: number) => (e: KonvaEventObject<DragEvent>) => {
     listActions.updateAt(i, {
       ...list[i],
@@ -78,6 +100,10 @@ export const Board: React.FC = () => {
     });
   };
 
+  /**
+   * Handle when user clicks on block that becomes red
+   * 
+   */
   const blockClick = (i: number) => (e: KonvaEventObject<DragEvent>) => {
     if (node && node?.[0] !== i) {
       connectListActions.push({
@@ -91,6 +117,9 @@ export const Board: React.FC = () => {
     }
   };
 
+  /**
+   * Open context menu with right click
+   */
   const contextBlock =
     (i: number, item: Item) => (e: KonvaEventObject<PointerEvent>) => {
       e.evt.preventDefault();
